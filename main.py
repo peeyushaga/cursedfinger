@@ -191,6 +191,7 @@ def draw_hand_landmarks(image, landmark_point):
 
     return image
 
+
 def calc_hand_landmark_list(image, landmarks):
     image_width, image_height = image.shape[1], image.shape[0]
     screen_width, screen_height = pyautogui.size()
@@ -213,6 +214,14 @@ def get_index_finger(landmark_point):
             index_y = landmark[1]
     return index_x, index_y
     
+
+def get_thumb(landmark_point):
+    for index, landmark in enumerate(landmark_point):
+        if index == 4:  # index finger: tip
+            index_x = landmark[0]
+            index_y = landmark[1]
+    return index_x, index_y
+
 # Global variables to store the smoothed index finger position
 smoothed_index_x = None
 smoothed_index_y = None
@@ -220,13 +229,8 @@ smoothed_index_y = None
 # Smoothing factor (increase for smoother movement, but slower to respond)
 smoothing_factor = 0.7
 
-def get_index_finger_smoother(landmark_point):
+def get_smoother_index(index_x, index_y):
     global smoothed_index_x, smoothed_index_y
-
-    for index, landmark in enumerate(landmark_point):
-        if index == 8:  # index finger: tip
-            index_x = landmark[0]
-            index_y = landmark[1]
 
     # Initialize smoothed position if it's the first time
     if smoothed_index_x is None or smoothed_index_y is None:
@@ -264,21 +268,35 @@ def main():
             for hand_landmarks in hand_results.multi_hand_landmarks:
                 hand_landmark_list = calc_hand_landmark_list(frame, hand_landmarks)                
                 frame = draw_hand_landmarks(frame, hand_landmark_list)
-                index_finger = get_index_finger_smoother(hand_landmark_list)
-                pyautogui.moveTo(index_finger[0]*screen_width/frame_width, index_finger[1]*screen_height/frame_height)
                 
-        if face_results.multi_face_landmarks is not None:
-            face_landmarks = face_results.multi_face_landmarks[0].landmark
-            left_eye = [face_landmarks[145], face_landmarks[159]]
-            for left_eye_landmark in left_eye:
-                left_eye_x = int(left_eye_landmark.x * frame_width)
-                left_eye_y = int(left_eye_landmark.y * frame_height)
-                cv.circle(frame, (left_eye_x, left_eye_y), 3, (0, 255, 255))
-            if (left_eye[0].y - left_eye[1].y) < 0.004:
-                print("click")
-                pyautogui.click()
-                pyautogui.sleep(1)
+                index_finger_x, index_finger_y = get_index_finger(hand_landmark_list)
+                index_finger_x, index_finger_y = get_smoother_index(index_finger_x, index_finger_y)
                 
+                thumb_x, thumb_y = get_thumb(hand_landmark_list)
+#                 thumb_x, thumb_y = get_smoother_index(thumb_x, thumb_y)
+                
+                pyautogui.moveTo(index_finger_x*screen_width/frame_width, index_finger_y*screen_height/frame_height)
+                
+                print(index_finger_y - thumb_y)
+                if abs(index_finger_y - thumb_y) < 60:
+                    pyautogui.click()
+                    pyautogui.sleep(1)
+                
+                
+        # if face_results.multi_face_landmarks is not None:
+        #     face_landmarks = face_results.multi_face_landmarks[0].landmark
+        #     left_eye = [face_landmarks[145], face_landmarks[159]]
+        #     for left_eye_landmark in left_eye:
+        #         left_eye_x = int(left_eye_landmark.x * frame_width)
+        #         left_eye_y = int(left_eye_landmark.y * frame_height)
+        #         cv.circle(frame, (left_eye_x, left_eye_y), 3, (0, 255, 255))
+        #     print(left_eye[0].y - left_eye[1].y)
+        #     if (left_eye[0].y - left_eye[1].y) < 0.01:
+        #         print("click")
+        #         pyautogui.click()
+        #         pyautogui.sleep(1)
+        
+        
                 
         cv.imshow("cursedfinger", frame)
         if cv.waitKey(1) & 0xFF == ord("q"):
@@ -288,3 +306,5 @@ def main():
     cv.destroyAllWindows()
 
 main()
+
+

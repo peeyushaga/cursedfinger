@@ -248,7 +248,6 @@ def main():
     
     cap = cv.VideoCapture(0)
     mp_hands = mp.solutions.hands.Hands()
-    mp_face = mp.solutions.face_mesh.FaceMesh(refine_landmarks=True)
 
     screen_width, screen_height = pyautogui.size()
     while True:
@@ -260,9 +259,6 @@ def main():
         frame_width, frame_height = frame.shape[1], frame.shape[0]
 
         hand_results = mp_hands.process(rgb_frame)
-        face_results = mp_face.process(rgb_frame)
-        
-        face_landmark_points = face_results.multi_face_landmarks
         
         if hand_results.multi_hand_landmarks is not None:
             for hand_landmarks in hand_results.multi_hand_landmarks:
@@ -273,7 +269,6 @@ def main():
                 index_finger_x, index_finger_y = get_smoother_index(index_finger_x, index_finger_y)
                 
                 thumb_x, thumb_y = get_thumb(hand_landmark_list)
-#                 thumb_x, thumb_y = get_smoother_index(thumb_x, thumb_y)
                 
                 pyautogui.moveTo(index_finger_x*screen_width/frame_width, index_finger_y*screen_height/frame_height)
                 
@@ -281,22 +276,6 @@ def main():
                 if abs(index_finger_y - thumb_y) < 60:
                     pyautogui.click()
                     pyautogui.sleep(1)
-                
-                
-        # if face_results.multi_face_landmarks is not None:
-        #     face_landmarks = face_results.multi_face_landmarks[0].landmark
-        #     left_eye = [face_landmarks[145], face_landmarks[159]]
-        #     for left_eye_landmark in left_eye:
-        #         left_eye_x = int(left_eye_landmark.x * frame_width)
-        #         left_eye_y = int(left_eye_landmark.y * frame_height)
-        #         cv.circle(frame, (left_eye_x, left_eye_y), 3, (0, 255, 255))
-        #     print(left_eye[0].y - left_eye[1].y)
-        #     if (left_eye[0].y - left_eye[1].y) < 0.01:
-        #         print("click")
-        #         pyautogui.click()
-        #         pyautogui.sleep(1)
-        
-        
                 
         cv.imshow("cursedfinger", frame)
         if cv.waitKey(1) & 0xFF == ord("q"):
